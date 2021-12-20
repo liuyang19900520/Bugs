@@ -13,6 +13,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.LongAdder;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -73,8 +74,7 @@ public class T1 {
 
                     String key = "item" + ThreadLocalRandom.current().nextInt(ITEM_COUNT);
 
-//利用computeIfAbsent()方法来实例化LongAdder，然后利用LongAdder来进行线程安全计数
-
+                    //利用computeIfAbsent()方法来实例化LongAdder，然后利用LongAdder来进行线程安全计数
                     freqs.computeIfAbsent(key, k -> new LongAdder()).increment();
 
                 }
@@ -85,16 +85,11 @@ public class T1 {
 
         forkJoinPool.awaitTermination(1, TimeUnit.HOURS);
 
-//因为我们的Value是LongAdder而不是Long，所以需要做一次转换才能返回
-
+        //因为我们的Value是LongAdder而不是Long，所以需要做一次转换才能返回
         return freqs.entrySet().stream()
-
                 .collect(Collectors.toMap(
-
                         e -> e.getKey(),
-
                         e -> e.getValue().longValue())
-
                 );
 
     }
@@ -111,15 +106,12 @@ public class T1 {
 
         stopWatch.stop();
 
-//校验元素数量
+        //校验元素数量
         Assert.isTrue(normaluse.size() == ITEM_COUNT, "normaluse size error");
 
-//校验累计总数
-
+        //校验累计总数
         Assert.isTrue(normaluse.entrySet().stream()
-
                         .mapToLong(item -> item.getValue()).reduce(0, Long::sum) == LOOP_COUNT
-
                 , "normaluse count error");
 
         stopWatch.start("gooduse");
@@ -142,5 +134,23 @@ public class T1 {
 
         return "OK";
 
+    }
+
+
+    public static void main(String[] args) {
+        System.out.println(testFunction(2,i -> i * 2 + 1,j -> j * j));
+
+
+        Function<String,String> function = Function.identity();
+        String strValue = testIdentity(function);
+        System.out.println(strValue);
+    }
+
+    public static int testFunction(int i, Function<Integer,Integer> function1, Function<Integer,Integer> function2) {
+        return function1.compose(function2).apply(i);
+    }
+
+    public static String testIdentity(Function<String,String> function) {
+        return function.apply("hello world");
     }
 }
