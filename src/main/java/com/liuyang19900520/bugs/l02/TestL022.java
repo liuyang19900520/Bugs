@@ -22,7 +22,7 @@ import java.util.stream.IntStream;
 @RestController
 @RequestMapping("/l022")
 
-public class TestL022Wrong {
+public class TestL022 {
 
     private List<Integer> data = new ArrayList<>();
 

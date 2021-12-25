@@ -18,7 +18,7 @@ import java.util.stream.IntStream;
 @RestController
 @RequestMapping("/l02")
 
-public class TestL021Wrong {
+public class TestL021 {
 
     @GetMapping("/wrong")
     public int wrong(@RequestParam(value = "count", defaultValue = "1000000") int count) {
