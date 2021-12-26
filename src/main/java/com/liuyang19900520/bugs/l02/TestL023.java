@@ -62,7 +62,9 @@ public class TestL023 {
 
         System.out.println(cartTest);
     }
-    private boolean createOrder(List<Item> order) { //存放所有获得的锁
+
+    private boolean createOrder(List<Item> order) {
+        //存放所有获得的锁
         List<ReentrantLock> locks = new ArrayList<>();
         for (Item item : order) {
             try {
@@ -76,7 +78,7 @@ public class TestL023 {
             } catch (InterruptedException e) {
             }
         }
-//锁全部拿到之后执行扣减库存业务逻辑
+        //锁全部拿到之后执行扣减库存业务逻辑
         try {
             order.forEach(item -> item.remaining--);
         } finally {
