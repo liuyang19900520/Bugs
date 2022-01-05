@@ -1,24 +1,13 @@
 package com.liuyang19900520.bugs.l05;
 
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.client.HttpClients;
-import org.checkerframework.checker.units.qual.A;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.apache.http.client.fluent.Request;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestTemplate;
-
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-
 
 /**
  * <p>
@@ -35,32 +24,26 @@ import java.util.concurrent.TimeUnit;
 public class TestL051 {
 
 
+  private String getResponse(String url, int connectTimeout, int readTimeout) throws IOException {
+    return Request.Get("http://localhost:8080/l051" + url)
+        .connectTimeout(connectTimeout).socketTimeout(readTimeout).execute().returnContent()
+        .asString();
+  }
+
+  @GetMapping("/client")
+  public String client() throws IOException {
+    log.info("client1 called");
+    //服务端5s超时，客户端读取超时2秒
+    return getResponse("/server?timeout=5000", 1000, 2000);
+  }
 
 
-    private String getResponse(String url, int connectTimeout, int readTimeout) throws IOException {
-
-
-        CloseableHttpClient httpClient = HttpClients.createDefault();
-        HttpGet httpGet = new HttpGet("https://www.baidu.com");
-        CloseableHttpResponse response = httpClient.execute(httpGet);
-
-        return response.toString();
-
-    }
-
-    @GetMapping("client")
-    public String client() throws IOException {
-        log.info("client1 called"); //服务端5s超时，客户端读取超时2秒
-        return getResponse("/server?timeout=5000", 1000, 2000);
-    }
-
-
-    @GetMapping("server")
-    public void server(@RequestParam("timeout") int timeout) throws InterruptedException {
-        log.info("server called");
-        TimeUnit.MILLISECONDS.sleep(timeout);
-        log.info("Done");
-    }
+  @GetMapping("/server")
+  public void server(@RequestParam("timeout") int timeout) throws InterruptedException {
+    log.info("server called");
+    TimeUnit.MILLISECONDS.sleep(timeout);
+    log.info("Done");
+  }
 
 
 }
