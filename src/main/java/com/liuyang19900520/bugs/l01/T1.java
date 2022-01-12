@@ -1,12 +1,5 @@
 package com.liuyang19900520.bugs.l01;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.Assert;
-import org.springframework.util.StopWatch;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
@@ -16,6 +9,11 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.Assert;
+import org.springframework.util.StopWatch;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * <p>
@@ -28,129 +26,127 @@ import java.util.stream.IntStream;
 @Slf4j
 @RestController
 public class T1 {
-    //循环次数
-    private static int LOOP_COUNT = 10000000;
-    //线程数量
-    private static int THREAD_COUNT = 10;
-    //元素数量
-    private static int ITEM_COUNT = 10;
 
-    private Map<String, Long> normaluse() throws InterruptedException {
-        ConcurrentHashMap<String, Long> freqs = new ConcurrentHashMap<>(ITEM_COUNT);
+  //循环次数
+  private static int LOOP_COUNT = 10000000;
+  //线程数量
+  private static int THREAD_COUNT = 10;
+  //元素数量
+  private static int ITEM_COUNT = 10;
 
-        ForkJoinPool forkJoinPool = new ForkJoinPool(THREAD_COUNT);
+  public static void main(String[] args) {
+    System.out.println(testFunction(2, i -> i * 2 + 1, j -> j * j));
 
-        forkJoinPool.execute(() -> IntStream.rangeClosed(1, LOOP_COUNT).parallel().forEach(i -> {
+    Function<String, String> function = Function.identity();
+    String strValue = testIdentity(function);
+    System.out.println(strValue);
+  }
 
-            //获得一个随机的Key
-            String key = "item" + ThreadLocalRandom.current().nextInt(ITEM_COUNT);
+  public static int testFunction(int i, Function<Integer, Integer> function1,
+      Function<Integer, Integer> function2) {
+    return function1.compose(function2).apply(i);
+  }
 
-            synchronized (freqs) {
-                if (freqs.containsKey(key)) {
-                    //Key存在则+1
-                    freqs.put(key, freqs.get(key) + 1);
-                } else {
-                    //Key不存在则初始化为1
-                    freqs.put(key, 1L);
-                }
-            }
-        }));
+  public static String testIdentity(Function<String, String> function) {
+    return function.apply("hello world");
+  }
 
-        forkJoinPool.shutdown();
-        forkJoinPool.awaitTermination(1, TimeUnit.HOURS);
+  private Map<String, Long> normaluse() throws InterruptedException {
+    ConcurrentHashMap<String, Long> freqs = new ConcurrentHashMap<>(ITEM_COUNT);
 
-        return freqs;
+    ForkJoinPool forkJoinPool = new ForkJoinPool(THREAD_COUNT);
 
-    }
+    forkJoinPool.execute(() -> IntStream.rangeClosed(1, LOOP_COUNT).parallel().forEach(i -> {
 
+      //获得一个随机的Key
+      String key = "item" + ThreadLocalRandom.current().nextInt(ITEM_COUNT);
 
-    private Map<String, Long> gooduse() throws InterruptedException {
+      synchronized (freqs) {
+        if (freqs.containsKey(key)) {
+          //Key存在则+1
+          freqs.put(key, freqs.get(key) + 1);
+        } else {
+          //Key不存在则初始化为1
+          freqs.put(key, 1L);
+        }
+      }
+    }));
 
-        ConcurrentHashMap<String, LongAdder> freqs = new ConcurrentHashMap<>(ITEM_COUNT);
+    forkJoinPool.shutdown();
+    forkJoinPool.awaitTermination(1, TimeUnit.HOURS);
 
-        ForkJoinPool forkJoinPool = new ForkJoinPool(THREAD_COUNT);
+    return freqs;
 
-        forkJoinPool.execute(() -> IntStream.rangeClosed(1, LOOP_COUNT).parallel().forEach(i -> {
+  }
 
-                    String key = "item" + ThreadLocalRandom.current().nextInt(ITEM_COUNT);
+  private Map<String, Long> gooduse() throws InterruptedException {
 
-                    //利用computeIfAbsent()方法来实例化LongAdder，然后利用LongAdder来进行线程安全计数
-                    freqs.computeIfAbsent(key, k -> new LongAdder()).increment();
+    ConcurrentHashMap<String, LongAdder> freqs = new ConcurrentHashMap<>(ITEM_COUNT);
 
-                }
+    ForkJoinPool forkJoinPool = new ForkJoinPool(THREAD_COUNT);
 
-        ));
+    forkJoinPool.execute(() -> IntStream.rangeClosed(1, LOOP_COUNT).parallel().forEach(i -> {
 
-        forkJoinPool.shutdown();
+          String key = "item" + ThreadLocalRandom.current().nextInt(ITEM_COUNT);
 
-        forkJoinPool.awaitTermination(1, TimeUnit.HOURS);
+          //利用computeIfAbsent()方法来实例化LongAdder，然后利用LongAdder来进行线程安全计数
+          freqs.computeIfAbsent(key, k -> new LongAdder()).increment();
 
-        //因为我们的Value是LongAdder而不是Long，所以需要做一次转换才能返回
-        return freqs.entrySet().stream()
-                .collect(Collectors.toMap(
-                        e -> e.getKey(),
-                        e -> e.getValue().longValue())
-                );
+        }
 
-    }
+    ));
 
+    forkJoinPool.shutdown();
 
-    @GetMapping("/good")
-    public String good() throws InterruptedException {
+    forkJoinPool.awaitTermination(1, TimeUnit.HOURS);
 
-        StopWatch stopWatch = new StopWatch();
+    //因为我们的Value是LongAdder而不是Long，所以需要做一次转换才能返回
+    return freqs.entrySet().stream()
+        .collect(Collectors.toMap(
+            e -> e.getKey(),
+            e -> e.getValue().longValue())
+        );
 
-        stopWatch.start("normaluse");
+  }
 
-        Map<String, Long> normaluse = normaluse();
+  @GetMapping("/good")
+  public String good() throws InterruptedException {
 
-        stopWatch.stop();
+    StopWatch stopWatch = new StopWatch();
 
-        //校验元素数量
-        Assert.isTrue(normaluse.size() == ITEM_COUNT, "normaluse size error");
+    stopWatch.start("normaluse");
 
-        //校验累计总数
-        Assert.isTrue(normaluse.entrySet().stream()
-                        .mapToLong(item -> item.getValue()).reduce(0, Long::sum) == LOOP_COUNT
-                , "normaluse count error");
+    Map<String, Long> normaluse = normaluse();
 
-        stopWatch.start("gooduse");
+    stopWatch.stop();
 
-        Map<String, Long> gooduse = gooduse();
+    //校验元素数量
+    Assert.isTrue(normaluse.size() == ITEM_COUNT, "normaluse size error");
 
-        stopWatch.stop();
+    //校验累计总数
+    Assert.isTrue(normaluse.entrySet().stream()
+            .mapToLong(item -> item.getValue()).reduce(0, Long::sum) == LOOP_COUNT
+        , "normaluse count error");
 
-        Assert.isTrue(gooduse.size() == ITEM_COUNT, "gooduse size error");
+    stopWatch.start("gooduse");
 
-        Assert.isTrue(gooduse.entrySet().stream()
+    Map<String, Long> gooduse = gooduse();
 
-                        .mapToLong(item -> item.getValue())
+    stopWatch.stop();
 
-                        .reduce(0, Long::sum) == LOOP_COUNT
+    Assert.isTrue(gooduse.size() == ITEM_COUNT, "gooduse size error");
 
-                , "gooduse count error");
+    Assert.isTrue(gooduse.entrySet().stream()
 
-        log.info(stopWatch.prettyPrint());
+            .mapToLong(item -> item.getValue())
 
-        return "OK";
+            .reduce(0, Long::sum) == LOOP_COUNT
 
-    }
+        , "gooduse count error");
 
+    log.info(stopWatch.prettyPrint());
 
-    public static void main(String[] args) {
-        System.out.println(testFunction(2,i -> i * 2 + 1,j -> j * j));
+    return "OK";
 
-
-        Function<String,String> function = Function.identity();
-        String strValue = testIdentity(function);
-        System.out.println(strValue);
-    }
-
-    public static int testFunction(int i, Function<Integer,Integer> function1, Function<Integer,Integer> function2) {
-        return function1.compose(function2).apply(i);
-    }
-
-    public static String testIdentity(Function<String,String> function) {
-        return function.apply("hello world");
-    }
+  }
 }

@@ -1,16 +1,18 @@
 package com.liuyang19900520.bugs.l01;
 
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Controller;
-import org.springframework.util.StopWatch;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.util.StopWatch;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * <p>
@@ -23,95 +25,100 @@ import java.util.stream.IntStream;
 @Slf4j
 @RestController
 public class T2 {
-    @GetMapping("/write")
-    public Map testWrite() {
 
-        List<Integer> copyOnWriteArrayList = new CopyOnWriteArrayList<>();
+  @GetMapping("/write")
+  public Map testWrite() {
 
-        List<Integer> synchronizedList = Collections.synchronizedList(new ArrayList<>());
+    List<Integer> copyOnWriteArrayList = new CopyOnWriteArrayList<>();
 
-        StopWatch stopWatch = new StopWatch();
+    List<Integer> synchronizedList = Collections.synchronizedList(new ArrayList<>());
 
-        int loopCount = 100000;
+    StopWatch stopWatch = new StopWatch();
 
-        stopWatch.start("Write:copyOnWriteArrayList");
+    int loopCount = 100000;
 
-        //循环100000次并发往CopyOnWriteArrayList写入随机元素
-        IntStream.rangeClosed(1, loopCount).parallel().forEach(__ -> copyOnWriteArrayList.add(ThreadLocalRandom.current().nextInt(loopCount)));
+    stopWatch.start("Write:copyOnWriteArrayList");
 
-        stopWatch.stop();
+    //循环100000次并发往CopyOnWriteArrayList写入随机元素
+    IntStream.rangeClosed(1, loopCount).parallel()
+        .forEach(__ -> copyOnWriteArrayList.add(ThreadLocalRandom.current().nextInt(loopCount)));
 
-        stopWatch.start("Write:synchronizedList");
+    stopWatch.stop();
 
-        //循环100000次并发往加锁的ArrayList写入随机元素
-        IntStream.rangeClosed(1, loopCount).parallel().forEach(__ -> synchronizedList.add(ThreadLocalRandom.current().nextInt(loopCount)));
+    stopWatch.start("Write:synchronizedList");
 
-        stopWatch.stop();
+    //循环100000次并发往加锁的ArrayList写入随机元素
+    IntStream.rangeClosed(1, loopCount).parallel()
+        .forEach(__ -> synchronizedList.add(ThreadLocalRandom.current().nextInt(loopCount)));
 
-        log.info(stopWatch.prettyPrint());
+    stopWatch.stop();
 
-        Map result = new HashMap();
+    log.info(stopWatch.prettyPrint());
 
-        result.put("copyOnWriteArrayList", copyOnWriteArrayList.size());
+    Map result = new HashMap();
 
-        result.put("synchronizedList", synchronizedList.size());
+    result.put("copyOnWriteArrayList", copyOnWriteArrayList.size());
 
-        return result;
+    result.put("synchronizedList", synchronizedList.size());
 
-    }
+    return result;
 
-    //帮助方法用来填充List
-    private void addAll(List<Integer> list) {
+  }
 
-        list.addAll(IntStream.rangeClosed(1, 1000000).boxed().collect(Collectors.toList()));
+  //帮助方法用来填充List
+  private void addAll(List<Integer> list) {
 
-    }
+    list.addAll(IntStream.rangeClosed(1, 1000000).boxed().collect(Collectors.toList()));
 
-    //测试并发读的性能
-    @GetMapping("/read")
+  }
 
-    public Map testRead() {
+  //测试并发读的性能
+  @GetMapping("/read")
 
-        //创建两个测试对象
-        List<Integer> copyOnWriteArrayList = new CopyOnWriteArrayList<>();
+  public Map testRead() {
 
-        List<Integer> synchronizedList = Collections.synchronizedList(new ArrayList<>());
+    //创建两个测试对象
+    List<Integer> copyOnWriteArrayList = new CopyOnWriteArrayList<>();
 
-        //填充数据
-        addAll(copyOnWriteArrayList);
+    List<Integer> synchronizedList = Collections.synchronizedList(new ArrayList<>());
 
-        addAll(synchronizedList);
+    //填充数据
+    addAll(copyOnWriteArrayList);
 
-        StopWatch stopWatch = new StopWatch();
+    addAll(synchronizedList);
 
-        int loopCount = 1000000;
+    StopWatch stopWatch = new StopWatch();
 
-        int count = copyOnWriteArrayList.size();
+    int loopCount = 1000000;
 
-        stopWatch.start("Read:copyOnWriteArrayList");
+    int count = copyOnWriteArrayList.size();
 
-        //循环1000000次并发从CopyOnWriteArrayList随机查询元素
-        IntStream.rangeClosed(1, loopCount).parallel().forEach(__ -> copyOnWriteArrayList.get(ThreadLocalRandom.current().nextInt(count)));
+    stopWatch.start("Read:copyOnWriteArrayList");
 
-        stopWatch.stop();
+    //循环1000000次并发从CopyOnWriteArrayList随机查询元素
+    IntStream.rangeClosed(1, loopCount).parallel()
+        .forEach(__ -> copyOnWriteArrayList.get(ThreadLocalRandom.current().nextInt(count)));
 
-        stopWatch.start("Read:synchronizedList");
+    stopWatch.stop();
 
-        //循环1000000次并发从加锁的ArrayList随机查询元素
-        IntStream.range(0, loopCount).parallel().forEach(__ -> synchronizedList.get(ThreadLocalRandom.current().nextInt(count)));
+    stopWatch.start("Read:synchronizedList");
 
-        stopWatch.stop();
+    //循环1000000次并发从加锁的ArrayList随机查询元素
+    IntStream.range(0, loopCount).parallel()
+        .forEach(__ -> synchronizedList.get(ThreadLocalRandom.current().nextInt(count)));
 
-        log.info(stopWatch.prettyPrint());
+    stopWatch.stop();
 
-        Map result = new HashMap();
+    log.info(stopWatch.prettyPrint());
 
-        result.put("copyOnWriteArrayList", copyOnWriteArrayList.size());
+    Map result = new HashMap();
 
-        result.put("synchronizedList", synchronizedList.size());
+    result.put("copyOnWriteArrayList", copyOnWriteArrayList.size());
 
-        return result;
+    result.put("synchronizedList", synchronizedList.size());
 
-    }
+    return result;
+
+  }
 
 }
