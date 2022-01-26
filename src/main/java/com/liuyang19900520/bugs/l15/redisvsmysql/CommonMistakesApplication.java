@@ -18,7 +18,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 /**
  * @author Max Liu
  */
-@SpringBootApplication
 @Slf4j
 public class CommonMistakesApplication {
 

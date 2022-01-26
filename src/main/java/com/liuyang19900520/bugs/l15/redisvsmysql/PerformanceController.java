@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @Slf4j
-@RequestMapping("redisvsmysql")
+@RequestMapping("/l15")
 public class PerformanceController {
 
   @Autowired
@@ -20,19 +20,19 @@ public class PerformanceController {
   @Autowired
   private StringRedisTemplate stringRedisTemplate;
 
-  @GetMapping("redis")
+  @GetMapping("/redis")
   public void redis() {
     Assert.isTrue(stringRedisTemplate.opsForValue()
         .get("item" + (ThreadLocalRandom.current().nextInt(CommonMistakesApplication.ROWS) + 1))
         .equals(CommonMistakesApplication.PAYLOAD));
   }
 
-  @GetMapping("redis2")
+  @GetMapping("/redis2")
   public void redis2() {
     Assert.isTrue(stringRedisTemplate.keys("item71*").size() == 1111);
   }
 
-  @GetMapping("mysql")
+  @GetMapping("/mysql")
   public void mysql() {
     Assert.isTrue(jdbcTemplate.queryForObject("SELECT data FROM `r` WHERE name=?", new Object[]{
                 ("item" + (ThreadLocalRandom.current().nextInt(CommonMistakesApplication.ROWS) + 1))},
@@ -40,7 +40,7 @@ public class PerformanceController {
         .equals(CommonMistakesApplication.PAYLOAD));
   }
 
-  @GetMapping("mysql2")
+  @GetMapping("/mysql2")
   public void mysql2() {
     Assert.isTrue(
         jdbcTemplate.queryForList("SELECT name FROM `r` WHERE name LIKE 'item71%'", String.class)
